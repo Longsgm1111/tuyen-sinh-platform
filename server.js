@@ -26,7 +26,7 @@ const ADMIN = {
 const DB_FILE = path.join(__dirname, "database.json");
 
 function readDB() {
-  return JSON.parse(fs.readFileSync(DB_FILE));
+  return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
 }
 
 function writeDB(data) {
@@ -44,10 +44,10 @@ app.post("/login", (req, res) => {
 
   if (username === ADMIN.username && password === ADMIN.password) {
     req.session.user = username;
-    res.json({ success: true });
-  } else {
-    res.json({ success: false });
+    return res.json({ success: true });
   }
+
+  res.json({ success: false });
 });
 
 // ===== Middleware bảo vệ admin =====
@@ -76,11 +76,10 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// ===== Static files (LUÔN để cuối) =====
-app.use(express.static("public"));
+// ===== Static files (luôn để cuối) =====
+app.use(express.static(path.join(__dirname, "public")));
 
 // ===== Start server =====
-const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
