@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Admin Dashboard</h1>
+  <a href="/logout" style="color:white;">Đăng xuất</a>
+</header>
+
+<main>
+  <h2>Chỉnh sửa nội dung</h2>
+
+  <textarea id="editor" style="width:100%;height:300px;"></textarea>
+  <br><br>
+  <button onclick="save()">Lưu thay đổi</button>
+</main>
+
+<script>
+async function load(){
+  const res = await fetch("/data");
+  const data = await res.json();
+  document.getElementById("editor").value = JSON.stringify(data,null,2);
+}
+
+async function save(){
+  const content = document.getElementById("editor").value;
+
+  try{
+    const json = JSON.parse(content);
+
+    await fetch("/update",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(json)
+    });
+
+    alert("Đã lưu thành công!");
+  }catch(e){
+    alert("JSON không hợp lệ!");
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>

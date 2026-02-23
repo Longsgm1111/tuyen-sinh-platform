@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Đăng nhập Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main style="max-width:400px;">
+  <h2>Đăng nhập quản trị</h2>
+
+  <input id="username" placeholder="Username" style="width:100%;padding:10px;margin-bottom:10px;">
+  <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;">
+  <button onclick="login()" style="width:100%;">Đăng nhập</button>
+
+  <p id="error" style="color:red;"></p>
+</main>
+
+<script>
+async function login(){
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username,password})
+  });
+
+  const data = await res.json();
+
+  if(data.success){
+    window.location.href="/admin";
+  }else{
+    document.getElementById("error").innerText="Sai tài khoản hoặc mật khẩu";
+  }
+}
+</script>
+
+</body>
+</html>
