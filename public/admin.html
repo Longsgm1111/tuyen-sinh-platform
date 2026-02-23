@@ -1,47 +1,203 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+
+<!-- Quill Editor -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<link rel="stylesheet" href="style.css">
+<style>
+body { background:#f4f6f9; color:#333; }
+
+.admin-container {
+  display:flex;
+  height:100vh;
+}
+
+.sidebar {
+  width:250px;
+  background:#1e3c72;
+  color:white;
+  padding:20px;
+  overflow-y:auto;
+}
+
+.sidebar h3 {
+  margin-top:0;
+}
+
+.sidebar button {
+  width:100%;
+  margin-bottom:10px;
+  padding:10px;
+  border:none;
+  cursor:pointer;
+  background:white;
+  color:#1e3c72;
+  border-radius:5px;
+}
+
+.main-panel {
+  flex:1;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+}
+
+.editor-area {
+  flex:1;
+  background:white;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+#editor {
+  height:300px;
+}
+
+.preview {
+  flex:1;
+  background:white;
+  margin-top:20px;
+  padding:15px;
+  border-radius:8px;
+  overflow:auto;
+}
+
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.upload-section {
+  margin-top:10px;
+}
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Admin Dashboard</h1>
-  <a href="/logout" style="color:white;">Đăng xuất</a>
-</header>
+<div class="admin-container">
 
-<main>
-  <h2>Chỉnh sửa nội dung</h2>
+  <div class="sidebar">
+    <h3>Danh mục</h3>
+    <div id="tabList"></div>
+    <button onclick="save()">💾 Lưu thay đổi</button>
+    <button onclick="logout()">🚪 Đăng xuất</button>
+  </div>
 
-  <textarea id="editor" style="width:100%;height:300px;"></textarea>
-  <br><br>
-  <button onclick="save()">Lưu thay đổi</button>
-</main>
+  <div class="main-panel">
+    <div class="topbar">
+      <h2 id="currentTab">Chọn mục</h2>
+    </div>
+
+    <div class="editor-area">
+      <div id="editor"></div>
+    </div>
+
+    <div class="upload-section">
+      <input type="file" id="imageUpload">
+      <input type="text" id="driveLink" placeholder="Dán link ảnh Google Drive tại đây">
+      <button onclick="insertDriveImage()">Chèn ảnh từ Drive</button>
+    </div>
+
+    <div class="preview">
+      <h3>Preview</h3>
+      <div id="previewContent"></div>
+    </div>
+  </div>
+
+</div>
 
 <script>
-async function load(){
+let dbData = null;
+let currentTab = null;
+
+const quill = new Quill('#editor', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ font: [] }, { size: [] }],
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered'}, { list: 'bullet' }],
+      [{ align: [] }],
+      ['image'],
+      ['clean']
+    ]
+  }
+});
+
+async function load() {
   const res = await fetch("/data");
-  const data = await res.json();
-  document.getElementById("editor").value = JSON.stringify(data,null,2);
+  dbData = await res.json();
+
+  const tabList = document.getElementById("tabList");
+  tabList.innerHTML = "";
+
+  Object.keys(dbData.tabs).forEach(tab => {
+    const btn = document.createElement("button");
+    btn.innerText = tab;
+    btn.onclick = () => selectTab(tab);
+    tabList.appendChild(btn);
+  });
 }
 
-async function save(){
-  const content = document.getElementById("editor").value;
+function selectTab(tab) {
+  currentTab = tab;
+  document.getElementById("currentTab").innerText = tab;
+  quill.root.innerHTML = dbData.tabs[tab].join("<hr>");
+  updatePreview();
+}
 
-  try{
-    const json = JSON.parse(content);
+quill.on('text-change', updatePreview);
 
-    await fetch("/update",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(json)
-    });
+function updatePreview() {
+  document.getElementById("previewContent").innerHTML = quill.root.innerHTML;
+}
 
-    alert("Đã lưu thành công!");
-  }catch(e){
-    alert("JSON không hợp lệ!");
-  }
+async function save() {
+  if (!currentTab) return alert("Chưa chọn mục!");
+
+  dbData.tabs[currentTab] = [quill.root.innerHTML];
+
+  await fetch("/update", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(dbData)
+  });
+
+  alert("Đã lưu!");
+}
+
+function logout() {
+  window.location.href="/logout";
+}
+
+/* Upload ảnh từ máy */
+document.getElementById("imageUpload").addEventListener("change", function() {
+  const file = this.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const range = quill.getSelection();
+    quill.insertEmbed(range.index, 'image', e.target.result);
+  };
+  reader.readAsDataURL(file);
+});
+
+/* Ảnh từ Google Drive */
+function insertDriveImage() {
+  const link = document.getElementById("driveLink").value;
+  if (!link) return;
+
+  const fileId = link.match(/[-\w]{25,}/);
+  if (!fileId) return alert("Link không hợp lệ!");
+
+  const directLink = `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
+  const range = quill.getSelection();
+  quill.insertEmbed(range.index, 'image', directLink);
 }
 
 load();
