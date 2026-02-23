@@ -22,14 +22,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET=Thuphuong33p93799SDyeuLong,
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true }
 }));
 
 /* ================= DATABASE ================= */
-mongoose.connect(process.env.MONGO_URI=mongodb+srv://longsgm1111:Thuuphuong33p93799SD@cluster0.pgn2htr.mongodb.net/?appName=Cluster0)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
@@ -41,7 +41,7 @@ const Data = mongoose.model("Data", DataSchema);
 
 /* ================= ADMIN ================= */
 const ADMIN_USER = process.env.ADMIN_USER;
-const ADMIN_PASS_HASH = $2b$10$sVwjXL2Jx7fP5LigjqowG.jIPaf3oE7cjHxuDMyg5kqPKPXduyi/W;
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
 
 /* ================= ROUTES ================= */
 
