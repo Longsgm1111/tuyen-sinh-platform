@@ -80,6 +80,7 @@ app.get("/logout", (req, res) => {
 app.use(express.static("public"));
 
 // ===== Start server =====
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`Server chạy tại http://localhost:${PORT}`);
+  console.log("Server running on port " + PORT);
 });
